@@ -28,5 +28,8 @@ use {
 
 This plugin automatically sets up the following keymaps in case they are not already taken:
 
-SUPER + mt: Toggle make terminal
-SUPER + mr: Runs the target
+
+| Keymap             | Functionality                                                  |
+|--------------------|----------------------------------------------------------------|
+| SUPER + mt         | Toggle make terminal.                                          |
+| SUPER + mr         | Runs make target                                               |

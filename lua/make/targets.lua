@@ -44,7 +44,7 @@ function M.run()
 
     -- Trim whitespace from the choice
     local target = choice:match('^%s*(.-)%s*$')
-    print(target)
+    require("make.terminal").exec(target)
 
   end)
 end

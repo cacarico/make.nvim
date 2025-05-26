@@ -1,3 +1,9 @@
-vim.api.nvim_create_user_command('MakeTargets', function()
-  require('make.commands').run()
-end, {})
+vim.keymap.set("t", "<esc><esc>", "<c-\\><c-n>")
+
+vim.keymap.set("n", "<SPACE>mt", function()
+	require("make.terminal").toggle()
+end)
+
+vim.keymap.set("n", "<SPACE>me", function()
+	require("make.targets").run()
+end)

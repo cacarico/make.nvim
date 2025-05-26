@@ -1,6 +1,11 @@
 clear: ## Clear all temp files
 	@rm -rf public/
 
+sleep:
+	@echo Start sleep
+	@sleep 5
+	@echo End sleep
+
 .PHONY: help clear
 
 help: ## This help.

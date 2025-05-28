@@ -8,7 +8,28 @@
 
 Make.nvim is a plugin to easily run Makefiles.
 
+**Run Makefile targets directly from Neovim in a persistent terminal split.**
 
+This plugin makes working with `Makefile`s inside Neovim a breeze. It parses your top-level Makefile, lists all available targets, and runs the selected target in an embedded terminal — without disrupting your workflow.
+
+---
+
+## ✨ Features
+
+- Parses the top-level `Makefile` and lists unique targets
+- Select targets using `vim.ui.select` (supports telescope, dressing, etc.)
+- Opens or reuses a terminal at the bottom split of your window
+- Sends `make <target>` and follows the output automatically
+
+---
+
+## 🛠️ Requirements
+
+- Neovim 0.8+ (0.10+ recommended for vim.system support)
+- A top-level Makefile in your working directory
+- make installed in your system
+
+---
 
 ## Installation
 
@@ -30,6 +51,7 @@ use {
 }
 ```
 
+---
 
 ## Getting Started
 

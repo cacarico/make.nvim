@@ -1,31 +1,36 @@
---- targets.lua
 --- @module targets
 --- Action for Make targets
 
 local M = {}
 local fn = vim.fn
+local api = vim.api
 local log = vim.log.levels
+local config = require("make.config")
 
 --- Parse the top-level Makefile and return a list of target names.
 --- Filters out duplicates and empty names.
----@return table
+---@return string[] targets
 function M.parse_makefile()
-	local cwd = fn.getcwd()
-	local path = cwd .. "/Makefile"
+	local path = fn.getcwd() .. "/Makefile"
 	if fn.filereadable(path) == 0 then
-		vim.notify("No Makefile found in " .. cwd, log.ERROR)
+		api.nvim_notify("No Makefile found in current directory", log.ERROR, {})
 		return {}
 	end
 
 	local lines = fn.readfile(path)
-	local targets = {}
+	local seen, targets = {}, {}
 	for _, line in ipairs(lines) do
-		-- Match "target:" at start of line
-		local name = line:match("^([%w%-%_]+)%s*:")
-		if name and name ~= "" and not vim.tbl_contains(targets, name) then
+    local name = line:match("^([%w%-%_]+)%s*:")
+		if name and not seen[name] then
 			table.insert(targets, name)
+			seen[name] = true
 		end
 	end
+
+	if config.debug then
+		api.nvim_notify("Found targets: " .. table.concat(targets, ", "), log.DEBUG, {})
+	end
+
 	return targets
 end
 
@@ -37,13 +42,11 @@ function M.run()
 	end
 
 	vim.ui.select(targets, { prompt = "Select Make target:" }, function(choice)
-		-- Abort if user cancelled or selected an empty string
 		if not choice or choice:match("^%s*$") then
 			return
 		end
 
-		-- Trim whitespace from the choice
-		local target = choice:match("^%s*(.-)%s*$")
+		local target = vim.trim(choice)
 		require("make.terminal").exec(target)
 	end)
 end

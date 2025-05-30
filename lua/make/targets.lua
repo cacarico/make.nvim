@@ -1,53 +1,60 @@
---- @module targets
---- Action for Make targets
+--- Functions to select and run Makefile targets using `vim.ui.select`.
+--- @module 'make.targets'
+---
 
 local M = {}
-local fn = vim.fn
-local api = vim.api
+local utils = require("make.utils")
+local term = require("make.terminal")
 local log = vim.log.levels
-local config = require("make.config")
+local config = require("make").config
 
---- Parse the top-level Makefile and return a list of target names.
---- Filters out duplicates and empty names.
----@return string[] targets
-function M.parse_makefile()
-	local path = fn.getcwd() .. "/Makefile"
-	if fn.filereadable(path) == 0 then
-		api.nvim_notify("No Makefile found in current directory", log.ERROR, {})
-		return {}
-	end
-
-	local lines = fn.readfile(path)
-	local seen, targets = {}, {}
-	for _, line in ipairs(lines) do
-    local name = line:match("^([%w%-%_]+)%s*:")
-		if name and not seen[name] then
-			table.insert(targets, name)
-			seen[name] = true
-		end
-	end
-
-	if config.debug then
-		api.nvim_notify("Found targets: " .. table.concat(targets, ", "), log.DEBUG, {})
-	end
-
-	return targets
-end
-
---- Prompt the user for a target and run `make <target>` in a terminal split
+--- Prompt user to select a Makefile target (names only) and execute it.
+--- Uses `vim.ui.select` to present the list of target names.
+--- @function run
 function M.run()
-	local targets = M.parse_makefile()
+	local targets = utils.parse_makefile()
 	if vim.tbl_isempty(targets) then
 		return
 	end
 
-	vim.ui.select(targets, { prompt = "Select Make target:" }, function(choice)
-		if not choice or choice:match("^%s*$") then
+	-- Extract just the names for the picker
+	local names = vim.tbl_map(function(t)
+		return t.name
+	end, targets)
+
+	vim.ui.select(names, { prompt = "Make targets" }, function(choice)
+		if not choice or choice == "" then
 			return
 		end
+		if config.debug then
+			vim.notify("Selected target: " .. choice, log.DEBUG)
+		end
+		term.exec(choice)
+	end)
+end
 
-		local target = vim.trim(choice)
-		require("make.terminal").exec(target)
+--- Prompt user to select a Makefile target (with descriptions) and execute it.
+--- Uses `vim.ui.select` with a custom `format_item` to show `name: desc`.
+--- @function run_description
+function M.run_description()
+	local targets = utils.parse_makefile()
+	if vim.tbl_isempty(targets) then
+		return
+	end
+
+	vim.ui.select(targets, {
+		prompt = "Make targets (with description)",
+		format_item = function(item)
+			return item.name .. (item.desc ~= "" and ": " .. item.desc or "")
+		end,
+	}, function(choice)
+		if not choice or not choice.name then
+			return
+		end
+		if config.debug then
+			vim.notify("Selected target: " .. choice.name, log.DEBUG)
+		end
+		term.exec(choice.name)
 	end)
 end
 

@@ -17,7 +17,7 @@ This plugin makes working with `Makefile`s inside Neovim a breeze. It parses you
 ## ✨ Features
 
 - Parses the top-level `Makefile` and lists unique targets
-- Select targets using `vim.ui.select` (supports telescope, dressing, etc.)
+- Select targets using `vim.ui.select` (supports telescope 🔭)
 - Opens or reuses a terminal at the bottom split of your window
 - Sends `make <target>` and follows the output automatically
 

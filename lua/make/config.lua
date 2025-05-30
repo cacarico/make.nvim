@@ -1,6 +1,6 @@
 --- config.lua
---- @module make.config
+--- @module 'config'
 
 return {
-  debug = false, -- Set to true to enable verbose debug logging
+  debug = true, -- Set to true to enable verbose debug logging
 }

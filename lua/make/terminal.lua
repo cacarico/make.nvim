@@ -66,8 +66,10 @@ end
 --- @tparam table opts   Passed to `ensure_terminal`
 function M.exec(target, opts)
   opts = opts or {}
+  local cur_win = api.nvim_get_current_win()
   local term = ensure_terminal(opts)
   local job  = vim.b[term.buf].terminal_job_id
+
   if not job then
     vim.notify("Terminal job not found", log.ERROR)
     return
@@ -79,9 +81,10 @@ function M.exec(target, opts)
 
   fn.chansend(job, "clear\n")
   fn.chansend(job, "make " .. target .. "\n")
-
-  --- Exit insert mode to allow normal-mode commands after run
   vim.cmd("stopinsert")
+
+  -- Return focus to original window
+  api.nvim_set_current_win(cur_win)
 end
 
 return M

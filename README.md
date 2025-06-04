@@ -61,5 +61,4 @@ This plugin automatically sets up the following keymaps in case they are not alr
 | Keymap              | Functionality                                                  |
 |---------------------|----------------------------------------------------------------|
 | leader + tm         | [t]oggle [m]ake terminal.                                      |
-| leader + mr         | [m]ake [t]target                                               |
-| leader + md         | [m]ake target showing [d]escription                            |
+| leader + mt         | [m]ake [t]target                                               |

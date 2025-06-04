@@ -34,6 +34,7 @@ function M.setup(opts)
   --- Define default keymaps if enabled
   if M.config.use_default_keymaps then
     local safe_map = require("make.utils").safe_map
+    safe_map("t", "<esc><esc>", "<c-\\><c-n>")
     safe_map("n", "<leader>tm", M.toggle, { desc = "Toggle Make terminal" })
     safe_map("n", "<leader>mt", M.run_desc, { desc = "Make: Select target (with desc)" })
   end

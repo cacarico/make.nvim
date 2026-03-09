@@ -11,7 +11,8 @@ local config = require("make").config
 --- Prompt user to select a Makefile target (names only) and execute it.
 --- Uses `vim.ui.select` to present the list of target names.
 --- @function run
-function M.run()
+--- @tparam table opts Forwarded to `terminal.exec`
+function M.run(opts)
 	local targets = utils.parse_makefile()
 	if vim.tbl_isempty(targets) then
 		return
@@ -29,14 +30,15 @@ function M.run()
 		if config.debug then
 			vim.notify("Selected target: " .. choice, log.DEBUG)
 		end
-		term.exec(choice)
+		term.exec(choice, opts)
 	end)
 end
 
 --- Prompt user to select a Makefile target (with descriptions) and execute it.
 --- Uses `vim.ui.select` with a custom `format_item` to show `name: desc`.
 --- @function run_description
-function M.run_description()
+--- @tparam table opts Forwarded to `terminal.exec`
+function M.run_description(opts)
 	local targets = utils.parse_makefile()
 	if vim.tbl_isempty(targets) then
 		return
@@ -54,7 +56,7 @@ function M.run_description()
 		if config.debug then
 			vim.notify("Selected target: " .. choice.name, log.DEBUG)
 		end
-		term.exec(choice.name)
+		term.exec(choice.name, opts)
 	end)
 end
 

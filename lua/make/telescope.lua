@@ -7,7 +7,8 @@ local log   = vim.log.levels
 --- Launch Telescope picker for make targets.
 --- @function run
 --- @tparam table opts Telescope picker options
-function M.run(opts)
+--- @tparam table exec_opts Forwarded to `terminal.exec` (e.g. `{ silent=true }`)
+function M.run(opts, exec_opts)
   local ok, pickers = pcall(require, "telescope.pickers")
   if not ok then
     vim.notify("Telescope not installed", log.ERROR)
@@ -39,7 +40,7 @@ function M.run(opts)
       actions.select_default:replace(function()
         actions.close(prompt_bufnr)
         local e = action_state.get_selected_entry().value
-        require("make.terminal").exec(e.name)
+        require("make.terminal").exec(e.name, exec_opts)
       end)
       return true
     end,
@@ -49,7 +50,8 @@ end
 --- Telescope picker including target descriptions.
 --- @function run_description
 --- @tparam table opts Picker options
-function M.run_description(opts)
+--- @tparam table exec_opts Forwarded to `terminal.exec` (e.g. `{ close_on_finish=true }`)
+function M.run_description(opts, exec_opts)
   local ok, pickers = pcall(require, "telescope.pickers")
   if not ok then
     vim.notify("Telescope not installed", log.ERROR)
@@ -82,7 +84,7 @@ function M.run_description(opts)
       actions.select_default:replace(function()
         actions.close(prompt_bufnr)
         local e = action_state.get_selected_entry().value
-        require("make.terminal").exec(e.name)
+        require("make.terminal").exec(e.name, exec_opts)
       end)
       return true
     end,

@@ -55,10 +55,37 @@ use {
 
 ## Getting Started
 
-This plugin automatically sets up the following keymaps in case they are not already taken:
+The plugin auto-initializes on load — no explicit `setup()` call required. Call `setup()` only if you want to override defaults:
 
+```lua
+require("make").setup({
+  debug             = false,  -- show debug notifications
+  term_height       = 5,      -- height of the terminal split
+  use_default_keymaps = true, -- set <leader>tm and <leader>mt
+  silent            = false,  -- run without a terminal; output goes to quickfix
+  close_on_finish   = false,  -- auto-close terminal split when make exits
+})
+```
 
-| Keymap              | Functionality                                                  |
-|---------------------|----------------------------------------------------------------|
-| leader + tm         | [t]oggle [m]ake terminal.                                      |
-| leader + mt         | [m]ake [t]target                                               |
+### Default keymaps
+
+Set automatically when `use_default_keymaps = true` and the key is not already mapped:
+
+| Keymap        | Functionality                        |
+|---------------|--------------------------------------|
+| `<leader>tm`  | Toggle make terminal                 |
+| `<leader>mt`  | Select and run target (with desc)    |
+
+### Commands
+
+| Command                        | Description                                      |
+|--------------------------------|--------------------------------------------------|
+| `MakeToggle`                   | Toggle the persistent terminal split             |
+| `MakeRun`                      | Pick target (names only) and run                 |
+| `MakeRunDescription`           | Pick target with descriptions and run            |
+| `MakeRunTelescope`             | Telescope picker (names only)                    |
+| `MakeRunTelescopeDescription`  | Telescope picker with descriptions               |
+| `MakeRunSilent`                | Run silently — output goes to quickfix           |
+| `MakeRunSilentDescription`     | Same, with description picker                    |
+| `MakeRunClose`                 | Run in terminal, auto-close when done            |
+| `MakeRunCloseDescription`      | Same, with description picker                    |

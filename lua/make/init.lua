@@ -7,10 +7,14 @@ local M = {}
 --- @field debug boolean Whether to enable debug notifications (default: `false`)
 --- @field term_height number Height of the make terminal split (default: `5`)
 --- @field use_default_keymaps boolean Whether to set up default `<leader>` mappings (default: `true`)
+--- @field silent boolean Run targets without a terminal; output goes to quickfix (default: `false`)
+--- @field close_on_finish boolean Auto-close terminal split when make exits (default: `false`)
 M.config = {
   debug = false,
   term_height = 5,
   use_default_keymaps = true,
+  silent = false,
+  close_on_finish = false,
 }
 
 --- Set up the plugin with user-provided options.
@@ -45,6 +49,10 @@ function M.setup(opts)
   vim.api.nvim_create_user_command("MakeRunDescription", M.run_desc, { nargs = 0 })
   vim.api.nvim_create_user_command("MakeRunTelescope", M.telescope, { nargs = 0 })
   vim.api.nvim_create_user_command("MakeRunTelescopeDescription", M.telescope_desc, { nargs = 0 })
+  vim.api.nvim_create_user_command("MakeRunSilent", function() M.run({ silent = true }) end, { nargs = 0 })
+  vim.api.nvim_create_user_command("MakeRunSilentDescription", function() M.run_desc({ silent = true }) end, { nargs = 0 })
+  vim.api.nvim_create_user_command("MakeRunClose", function() M.run({ close_on_finish = true }) end, { nargs = 0 })
+  vim.api.nvim_create_user_command("MakeRunCloseDescription", function() M.run_desc({ close_on_finish = true }) end, { nargs = 0 })
 end
 
 --- Toggle the make terminal split open or closed.
@@ -57,32 +65,48 @@ function M.toggle()
   }
 end
 
+--- Build exec opts from config (or override).
+--- @tparam table override Optional overrides (e.g. `{ silent=true }`)
+--- @treturn table
+local function exec_opts(override)
+  local base = {
+    height         = M.config.term_height,
+    debug          = M.config.debug,
+    silent         = M.config.silent,
+    close_on_finish = M.config.close_on_finish,
+  }
+  if override then
+    for k, v in pairs(override) do base[k] = v end
+  end
+  return base
+end
+
 --- Prompt for a target and run `make <target>` in terminal.
 --- @function run
 --- @see make.targets.run
-function M.run()
-  require("make.targets").run()
+function M.run(override)
+  require("make.targets").run(exec_opts(override))
 end
 
 --- Prompt for a target (with descriptions) and run it.
 --- @function run_desc
 --- @see make.targets.run_description
-function M.run_desc()
-  require("make.targets").run_description()
+function M.run_desc(override)
+  require("make.targets").run_description(exec_opts(override))
 end
 
 --- Use Telescope picker for targets and run the selected one.
 --- @function telescope
 --- @see make.telescope.run
-function M.telescope()
-  require("make.telescope").run()
+function M.telescope(override)
+  require("make.telescope").run(nil, exec_opts(override))
 end
 
 --- Telescope picker with target descriptions.
 --- @function telescope_desc
 --- @see make.telescope.run_description
-function M.telescope_desc()
-  require("make.telescope").run_description()
+function M.telescope_desc(override)
+  require("make.telescope").run_description(nil, exec_opts(override))
 end
 
 return M

@@ -1,63 +1,69 @@
 --- Functions to select and run Makefile targets using `vim.ui.select`.
 --- @module 'make.targets'
----
 
-local M = {}
+local M     = {}
 local utils = require("make.utils")
-local term = require("make.terminal")
-local log = vim.log.levels
-local config = require("make").config
+local term  = require("make.terminal")
+local log   = vim.log.levels
+
+--- Dispatch to the correct terminal function based on opts.
+---@param target string
+---@param opts? table
+local function exec(target, opts)
+  if opts and opts.silent then
+    term.exec_silent(target, opts)
+  elseif opts and opts.close_on_finish then
+    term.exec_autoclose(target, opts)
+  else
+    term.exec(target, opts)
+  end
+end
 
 --- Prompt user to select a Makefile target (names only) and execute it.
---- Uses `vim.ui.select` to present the list of target names.
---- @function run
---- @tparam table opts Forwarded to `terminal.exec`
+---@param opts? table Forwarded to terminal exec functions
 function M.run(opts)
-	local targets = utils.parse_makefile()
-	if vim.tbl_isempty(targets) then
-		return
-	end
+  local targets = utils.parse_makefile()
+  if vim.tbl_isempty(targets) then
+    return
+  end
 
-	-- Extract just the names for the picker
-	local names = vim.tbl_map(function(t)
-		return t.name
-	end, targets)
+  local names = vim.tbl_map(function(t)
+    return t.name
+  end, targets)
 
-	vim.ui.select(names, { prompt = "Make targets" }, function(choice)
-		if not choice or choice == "" then
-			return
-		end
-		if config.debug then
-			vim.notify("Selected target: " .. choice, log.DEBUG)
-		end
-		term.exec(choice, opts)
-	end)
+  vim.ui.select(names, { prompt = "Make targets" }, function(choice)
+    if not choice or choice == "" then
+      return
+    end
+    if require("make.config").values.debug then
+      vim.notify("Selected target: " .. choice, log.DEBUG)
+    end
+    exec(choice, opts)
+  end)
 end
 
 --- Prompt user to select a Makefile target (with descriptions) and execute it.
---- Uses `vim.ui.select` with a custom `format_item` to show `name: desc`.
---- @function run_description
---- @tparam table opts Forwarded to `terminal.exec`
+---@param opts? table Forwarded to terminal exec functions
 function M.run_description(opts)
-	local targets = utils.parse_makefile()
-	if vim.tbl_isempty(targets) then
-		return
-	end
+  local targets = utils.parse_makefile()
+  if vim.tbl_isempty(targets) then
+    return
+  end
 
-	vim.ui.select(targets, {
-		prompt = "Make targets (with description)",
-		format_item = function(item)
-			return item.name .. (item.desc ~= "" and ": " .. item.desc or "")
-		end,
-	}, function(choice)
-		if not choice or not choice.name then
-			return
-		end
-		if config.debug then
-			vim.notify("Selected target: " .. choice.name, log.DEBUG)
-		end
-		term.exec(choice.name, opts)
-	end)
+  vim.ui.select(targets, {
+    prompt = "Make targets (with description)",
+    format_item = function(item)
+      return item.name .. (item.desc ~= "" and ": " .. item.desc or "")
+    end,
+  }, function(choice)
+    if not choice or not choice.name then
+      return
+    end
+    if require("make.config").values.debug then
+      vim.notify("Selected target: " .. choice.name, log.DEBUG)
+    end
+    exec(choice.name, opts)
+  end)
 end
 
 return M

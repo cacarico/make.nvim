@@ -2,13 +2,27 @@
 --- @module 'make.telescope'
 local M     = {}
 local utils = require("make.utils")
+local term  = require("make.terminal")
 local log   = vim.log.levels
 
---- Launch Telescope picker for make targets.
---- @function run
---- @tparam table opts Telescope picker options
---- @tparam table exec_opts Forwarded to `terminal.exec` (e.g. `{ silent=true }`)
-function M.run(opts, exec_opts)
+--- Dispatch to the correct terminal function based on opts.
+---@param target string
+---@param opts? table
+local function exec(target, opts)
+  if opts and opts.silent then
+    term.exec_silent(target, opts)
+  elseif opts and opts.close_on_finish then
+    term.exec_autoclose(target, opts)
+  else
+    term.exec(target, opts)
+  end
+end
+
+--- Internal: open a Telescope picker for make targets.
+---@param opts? table Telescope picker options
+---@param exec_opts? table Forwarded to terminal exec functions
+---@param show_desc boolean Whether to show target descriptions
+local function open_picker(opts, exec_opts, show_desc)
   local ok, pickers = pcall(require, "telescope.pickers")
   if not ok then
     vim.notify("Telescope not installed", log.ERROR)
@@ -24,14 +38,20 @@ function M.run(opts, exec_opts)
   if vim.tbl_isempty(targets) then return end
 
   pickers.new(opts, {
-    prompt_title = "Make Targets",
+    prompt_title = show_desc and "Make Targets (with Descriptions)" or "Make Targets",
     finder = finders.new_table {
-      results   = targets,
+      results     = targets,
       entry_maker = function(entry)
+        local display = entry.name
+        local ordinal = entry.name
+        if show_desc then
+          display = entry.name .. (entry.desc ~= "" and " – " .. entry.desc or "")
+          ordinal = entry.name .. " " .. entry.desc
+        end
         return {
           value   = entry,
-          display = entry.name,
-          ordinal = entry.name,
+          display = display,
+          ordinal = ordinal,
         }
       end,
     },
@@ -40,55 +60,25 @@ function M.run(opts, exec_opts)
       actions.select_default:replace(function()
         actions.close(prompt_bufnr)
         local e = action_state.get_selected_entry().value
-        require("make.terminal").exec(e.name, exec_opts)
+        exec(e.name, exec_opts)
       end)
       return true
     end,
   }):find()
 end
 
---- Telescope picker including target descriptions.
---- @function run_description
---- @tparam table opts Picker options
---- @tparam table exec_opts Forwarded to `terminal.exec` (e.g. `{ close_on_finish=true }`)
+--- Launch Telescope picker for make targets (names only).
+---@param opts? table Telescope picker options
+---@param exec_opts? table Forwarded to terminal exec functions
+function M.run(opts, exec_opts)
+  open_picker(opts, exec_opts, false)
+end
+
+--- Launch Telescope picker for make targets with descriptions.
+---@param opts? table Telescope picker options
+---@param exec_opts? table Forwarded to terminal exec functions
 function M.run_description(opts, exec_opts)
-  local ok, pickers = pcall(require, "telescope.pickers")
-  if not ok then
-    vim.notify("Telescope not installed", log.ERROR)
-    return
-  end
-  local finders      = require("telescope.finders")
-  local actions      = require("telescope.actions")
-  local action_state = require("telescope.actions.state")
-  local conf         = require("telescope.config").values
-
-  opts = opts or {}
-  local targets = utils.parse_makefile()
-  if vim.tbl_isempty(targets) then return end
-
-  pickers.new(opts, {
-    prompt_title = "Make Targets (with Descriptions)",
-    finder = finders.new_table {
-      results = targets,
-      entry_maker = function(entry)
-        local disp = entry.name .. (entry.desc ~= "" and " – " .. entry.desc or "")
-        return {
-          value   = entry,
-          display = disp,
-          ordinal = entry.name .. " " .. entry.desc,
-        }
-      end,
-    },
-    sorter = conf.generic_sorter(opts),
-    attach_mappings = function(prompt_bufnr)
-      actions.select_default:replace(function()
-        actions.close(prompt_bufnr)
-        local e = action_state.get_selected_entry().value
-        require("make.terminal").exec(e.name, exec_opts)
-      end)
-      return true
-    end,
-  }):find()
+  open_picker(opts, exec_opts, true)
 end
 
 return M

@@ -7,11 +7,11 @@ local log = vim.log.levels
 --- Parse the nearest Makefile and extract targets.
 --- Searches cwd first, then upward (Neovim 0.9+).
 --- Captures lines like `target: … ## description` or bare `target:`.
---- @treturn { name: string, desc: string }[] List of targets
+---@return { name: string, desc: string }[]
 function M.parse_makefile()
-	local cwd = vim.loop.cwd() or fn.getcwd()
+	local cwd = vim.uv.cwd() or fn.getcwd()
 	local path = cwd .. "/Makefile"
-	if fn.filereadable(path) == 0 and fn.has("nvim-0.9") == 1 then
+	if fn.filereadable(path) == 0 then
 		--- Attempt to find Makefile upward
 		local found = vim.fs.find("Makefile", { path = cwd, upward = true })
 		path = (found and found[1]) or ""
@@ -39,7 +39,7 @@ function M.parse_makefile()
 		end
 	end
 
-	if require("make").config.debug then
+	if require("make.config").values.debug then
 		--- Log parsed targets in debug mode
 		local list = {}
 		for _, t in ipairs(out) do
@@ -52,10 +52,10 @@ function M.parse_makefile()
 end
 
 --- Safely map a key if no existing mapping is found.
---- @tparam string mode Vim mode (e.g. `"n"`, `"i"`)
---- @tparam string lhs  Left-hand side of the mapping
---- @tparam function|string rhs Right-hand side (command or Lua fn)
---- @tparam table opts  Mapping options
+---@param mode string Vim mode (e.g. `"n"`, `"i"`)
+---@param lhs string Left-hand side of the mapping
+---@param rhs string|function Right-hand side (command or Lua fn)
+---@param opts? table Mapping options
 function M.safe_map(mode, lhs, rhs, opts)
 	opts = opts or {}
 	local existing = vim.fn.maparg(lhs, mode, false, false)

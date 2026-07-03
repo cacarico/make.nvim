@@ -5,31 +5,9 @@ local utils = require("make.utils")
 local term  = require("make.terminal")
 local log   = vim.log.levels
 
---- Dispatch to the correct terminal function based on opts.
----@param target string
----@param opts? table
-local function exec(target, opts)
-  local cfg = require("make.config").values
-  opts = opts or {}
-
-  -- Per-call opts win; fall back to config defaults when unset.
-  local silent = opts.silent
-  if silent == nil then silent = cfg.silent end
-  local close = opts.close_on_finish
-  if close == nil then close = cfg.close_on_finish end
-
-  if silent then
-    term.exec_silent(target, opts)
-  elseif close then
-    term.exec_autoclose(target, opts)
-  else
-    term.exec(target, opts)
-  end
-end
-
 --- Internal: open a Telescope picker for make targets.
 ---@param opts? table Telescope picker options
----@param exec_opts? table Forwarded to terminal exec functions
+---@param exec_opts? table Forwarded to terminal.run
 ---@param show_desc boolean Whether to show target descriptions
 local function open_picker(opts, exec_opts, show_desc)
   local ok, pickers = pcall(require, "telescope.pickers")
@@ -72,7 +50,7 @@ local function open_picker(opts, exec_opts, show_desc)
         if require("make.config").values.debug then
           vim.notify("Selected target: " .. e.name, log.DEBUG)
         end
-        exec(e.name, exec_opts)
+        term.run(e.name, exec_opts)
       end)
       return true
     end,
@@ -81,14 +59,14 @@ end
 
 --- Launch Telescope picker for make targets (names only).
 ---@param opts? table Telescope picker options
----@param exec_opts? table Forwarded to terminal exec functions
+---@param exec_opts? table Forwarded to terminal.run
 function M.run(opts, exec_opts)
   open_picker(opts, exec_opts, false)
 end
 
 --- Launch Telescope picker for make targets with descriptions.
 ---@param opts? table Telescope picker options
----@param exec_opts? table Forwarded to terminal exec functions
+---@param exec_opts? table Forwarded to terminal.run
 function M.run_description(opts, exec_opts)
   open_picker(opts, exec_opts, true)
 end

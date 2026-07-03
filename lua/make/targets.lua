@@ -6,30 +6,8 @@ local utils = require("make.utils")
 local term  = require("make.terminal")
 local log   = vim.log.levels
 
---- Dispatch to the correct terminal function based on opts.
----@param target string
----@param opts? table
-local function exec(target, opts)
-  local cfg = require("make.config").values
-  opts = opts or {}
-
-  -- Per-call opts win; fall back to config defaults when unset.
-  local silent = opts.silent
-  if silent == nil then silent = cfg.silent end
-  local close = opts.close_on_finish
-  if close == nil then close = cfg.close_on_finish end
-
-  if silent then
-    term.exec_silent(target, opts)
-  elseif close then
-    term.exec_autoclose(target, opts)
-  else
-    term.exec(target, opts)
-  end
-end
-
---- Prompt user to select a Makefile target (names only) and execute it.
----@param opts? table Forwarded to terminal exec functions
+--- Prompt user to select a Makefile target (names only) and run it.
+---@param opts? table Forwarded to terminal.run (args/silent/close_on_finish/prompt_args)
 function M.run(opts)
   local targets = utils.parse_makefile()
   if vim.tbl_isempty(targets) then
@@ -47,12 +25,12 @@ function M.run(opts)
     if require("make.config").values.debug then
       vim.notify("Selected target: " .. choice, log.DEBUG)
     end
-    exec(choice, opts)
+    term.run(choice, opts)
   end)
 end
 
---- Prompt user to select a Makefile target (with descriptions) and execute it.
----@param opts? table Forwarded to terminal exec functions
+--- Prompt user to select a Makefile target (with descriptions) and run it.
+---@param opts? table Forwarded to terminal.run
 function M.run_description(opts)
   local targets = utils.parse_makefile()
   if vim.tbl_isempty(targets) then
@@ -71,7 +49,7 @@ function M.run_description(opts)
     if require("make.config").values.debug then
       vim.notify("Selected target: " .. choice.name, log.DEBUG)
     end
-    exec(choice.name, opts)
+    term.run(choice.name, opts)
   end)
 end
 

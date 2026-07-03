@@ -64,6 +64,8 @@ require("make").setup({
   use_default_keymaps = true, -- set <leader>tm and <leader>mt
   silent            = false,  -- run without a terminal; output goes to quickfix
   close_on_finish   = false,  -- auto-close terminal split when make exits
+  notify            = true,   -- show notifications when running/finishing targets
+  history           = true,   -- record run history and persist it across sessions
 })
 ```
 
@@ -89,3 +91,40 @@ Set automatically when `use_default_keymaps = true` and the key is not already m
 | `MakeRunSilentDescription`     | Same, with description picker                    |
 | `MakeRunClose`                 | Run in terminal, auto-close when done            |
 | `MakeRunCloseDescription`      | Same, with description picker                    |
+| `Make [target] [args...]`      | Run a target with extra args (completes targets) |
+| `MakeArgs`                     | Pick a target, then prompt for extra make args   |
+| `MakeHistory`                  | Pick a previous run and re-run it                 |
+| `MakeAgain`                    | Re-run the most recent target                    |
+
+---
+
+## 🔔 Notifications
+
+With `notify = true` (the default) make.nvim shows a `vim.notify` message when a
+target starts, and — in silent and auto-close modes, where the exit code is
+available — whether it succeeded or failed. Set `notify = false` to silence them.
+
+## ➕ Passing arguments
+
+Pass extra arguments to `make` in two ways:
+
+```vim
+:Make build VERBOSE=1 -j4   " target + args on the command line (tab-completes targets)
+:MakeArgs                   " pick a target, then type args at the prompt
+```
+
+Arguments are recorded with the run, so re-running replays them.
+
+## 🕘 History
+
+Every run is recorded (target, args and mode) and persisted to
+`stdpath('data')/make_nvim_history.json`, so it survives restarts.
+
+| Command        | Description                              |
+|----------------|------------------------------------------|
+| `MakeHistory`  | Pick a previous run and re-run it        |
+| `MakeAgain`    | Re-run the most recent target            |
+
+`MakeHistory` uses `vim.ui.select`, so it renders through Telescope automatically
+if you use [telescope-ui-select](https://github.com/nvim-telescope/telescope-ui-select.nvim).
+Set `history = false` to disable recording.

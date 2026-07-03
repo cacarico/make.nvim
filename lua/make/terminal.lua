@@ -42,7 +42,10 @@ end
 --- Height always comes from config; no per-call overrides.
 function M.toggle()
   if state.win and api.nvim_win_is_valid(state.win) then
-    api.nvim_win_hide(state.win)
+    -- Only hide when another window exists; hiding the last window throws E444.
+    if #api.nvim_list_wins() > 1 then
+      api.nvim_win_hide(state.win)
+    end
   else
     ensure_terminal()
   end

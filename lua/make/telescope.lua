@@ -9,9 +9,18 @@ local log   = vim.log.levels
 ---@param target string
 ---@param opts? table
 local function exec(target, opts)
-  if opts and opts.silent then
+  local cfg = require("make.config").values
+  opts = opts or {}
+
+  -- Per-call opts win; fall back to config defaults when unset.
+  local silent = opts.silent
+  if silent == nil then silent = cfg.silent end
+  local close = opts.close_on_finish
+  if close == nil then close = cfg.close_on_finish end
+
+  if silent then
     term.exec_silent(target, opts)
-  elseif opts and opts.close_on_finish then
+  elseif close then
     term.exec_autoclose(target, opts)
   else
     term.exec(target, opts)
@@ -60,6 +69,9 @@ local function open_picker(opts, exec_opts, show_desc)
       actions.select_default:replace(function()
         actions.close(prompt_bufnr)
         local e = action_state.get_selected_entry().value
+        if require("make.config").values.debug then
+          vim.notify("Selected target: " .. e.name, log.DEBUG)
+        end
         exec(e.name, exec_opts)
       end)
       return true

@@ -26,15 +26,19 @@ function M.parse_makefile()
 	local out = {}
 
 	for _, line in ipairs(lines) do
-		local name, desc = line:match("^([%w%-%_]+)%s*:%s*.-##%s*(.+)$")
-		if name and not seen[name] then
-			table.insert(out, { name = name, desc = desc })
-			seen[name] = true
-		elseif not name then
-			name = line:match("^([%w%-%_]+)%s*:")
+		-- Skip variable assignments (`FOO := bar`, `FOO ::= bar`); the target
+		-- patterns below would otherwise capture them as runnable targets.
+		if not line:match("^[%w%-%_]+%s*::?=") then
+			local name, desc = line:match("^([%w%-%_]+)%s*:%s*.-##%s*(.+)$")
 			if name and not seen[name] then
-				table.insert(out, { name = name, desc = "" })
+				table.insert(out, { name = name, desc = desc })
 				seen[name] = true
+			elseif not name then
+				name = line:match("^([%w%-%_]+)%s*:")
+				if name and not seen[name] then
+					table.insert(out, { name = name, desc = "" })
+					seen[name] = true
+				end
 			end
 		end
 	end

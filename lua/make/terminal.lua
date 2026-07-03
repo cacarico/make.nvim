@@ -19,14 +19,42 @@ local function notify_user(msg, level)
   end
 end
 
---- Split an args string into a list for argv-style APIs.
+--- Split an args string into argv tokens, honouring single/double quotes
+--- (e.g. `CFLAGS="-O2 -g"` stays a single token). Backslash escaping is not
+--- handled; for full shell semantics use the persistent terminal, which sends
+--- the raw string to the shell.
 ---@param args? string
 ---@return string[]
-local function split_args(args)
+function M.split_args(args)
   if not args or args == "" then
     return {}
   end
-  return vim.split(args, "%s+", { trimempty = true })
+  local out, buf, quote, has = {}, {}, nil, false
+  for i = 1, #args do
+    local c = args:sub(i, i)
+    if quote then
+      if c == quote then
+        quote = nil
+      else
+        buf[#buf + 1] = c
+      end
+    elseif c == '"' or c == "'" then
+      quote = c
+      has = true
+    elseif c:match("%s") then
+      if has then
+        out[#out + 1] = table.concat(buf)
+        buf, has = {}, false
+      end
+    else
+      buf[#buf + 1] = c
+      has = true
+    end
+  end
+  if has then
+    out[#out + 1] = table.concat(buf)
+  end
+  return out
 end
 
 --- Human-readable "make <target> <args>" string.
@@ -121,7 +149,7 @@ function M.exec_silent(target, opts)
   notify_user("Running: " .. display)
 
   local argv = { "make", target }
-  vim.list_extend(argv, split_args(opts.args))
+  vim.list_extend(argv, M.split_args(opts.args))
 
   vim.system(argv, { cwd = fn.getcwd(), text = true }, function(result)
     vim.schedule(function()
@@ -161,7 +189,7 @@ function M.exec_autoclose(target, opts)
   })
 
   local argv = { "make", target }
-  vim.list_extend(argv, split_args(opts.args))
+  vim.list_extend(argv, M.split_args(opts.args))
   vim.fn.jobstart(argv, { term = true })
 
   api.nvim_create_autocmd("TermClose", {
@@ -216,7 +244,12 @@ function M.run(target, opts)
   if close == nil then close = cfg.close_on_finish end
 
   local mode = silent and "silent" or (close and "autoclose" or "terminal")
-  require("make.history").record({ target = target, args = opts.args or "", mode = mode })
+  require("make.history").record({
+    target = target,
+    args   = opts.args or "",
+    mode   = mode,
+    cwd    = vim.fn.getcwd(),
+  })
 
   if silent then
     M.exec_silent(target, opts)

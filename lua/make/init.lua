@@ -42,6 +42,44 @@ function M.setup(opts)
     function() M.run({ close_on_finish = true }) end, { nargs = 0 })
   vim.api.nvim_create_user_command("MakeRunCloseDescription",
     function() M.run_desc({ close_on_finish = true }) end, { nargs = 0 })
+
+  -- Pick a target (with descriptions), then prompt for extra make args.
+  vim.api.nvim_create_user_command("MakeArgs",
+    function() require("make.targets").run_description({ prompt_args = true }) end, { nargs = 0 })
+
+  -- Free-form: :Make [target] [args...]. With no target it opens the picker.
+  -- Completes target names for the first argument.
+  vim.api.nvim_create_user_command("Make", function(info)
+    local target = info.fargs[1]
+    if not target then
+      M.run(info)
+      return
+    end
+    local args = table.concat(vim.list_slice(info.fargs, 2), " ")
+    require("make.terminal").run(target, { args = args })
+  end, {
+    nargs = "*",
+    complete = function(arglead, cmdline)
+      -- Only complete the target (the first argument).
+      local before = cmdline:sub(1, #cmdline - #arglead)
+      if before:gsub("^%s*%S+%s*", "") ~= "" then
+        return {}
+      end
+      local out = {}
+      for _, t in ipairs(require("make.utils").parse_makefile()) do
+        if t.name:find(arglead, 1, true) == 1 then
+          table.insert(out, t.name)
+        end
+      end
+      return out
+    end,
+  })
+
+  -- History.
+  vim.api.nvim_create_user_command("MakeHistory",
+    function() require("make.history").pick() end, { nargs = 0 })
+  vim.api.nvim_create_user_command("MakeAgain",
+    function() require("make.history").run_last() end, { nargs = 0 })
 end
 
 return M
